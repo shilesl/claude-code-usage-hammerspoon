@@ -6,7 +6,9 @@
 #   - 5h/周限额百分比+重置 → ~/.claude-rate-limits.json(由 statusLine 包装脚本写入的官方数据)
 #
 DISPLAY_TZ="America/Los_Angeles"
-TZ_LABEL="America/Los_Angeles"      # 显示给人看的时区名(可改 洛杉矶 / LA 等)
+TZ_LABEL="LA"                       # 显示给人看的时区名(可改 洛杉矶 / America/Los_Angeles 等)
+BJ_TZ="Asia/Shanghai"              # 第二个时区:北京时间
+BJ_LABEL="北京"
 RATE_FILE="$HOME/.claude-rate-limits.json"
 
 export PATH="/opt/homebrew/bin:$HOME/.local/bin:/usr/local/bin:$PATH"
@@ -21,7 +23,7 @@ fi
 DAILY_JSON="$("$CCUSAGE" --json --offline 2>/dev/null)"
 BLOCK_JSON="$("$CCUSAGE" blocks --active --json --offline 2>/dev/null)"
 
-python3 - "$DAILY_JSON" "$BLOCK_JSON" "$DISPLAY_TZ" "$TZ_LABEL" "$RATE_FILE" <<'PY'
+python3 - "$DAILY_JSON" "$BLOCK_JSON" "$DISPLAY_TZ" "$TZ_LABEL" "$RATE_FILE" "$BJ_TZ" "$BJ_LABEL" <<'PY'
 import sys, json, os
 from datetime import datetime, timedelta, timezone
 try:
@@ -29,15 +31,22 @@ try:
 except Exception:
     ZoneInfo = None
 
-daily_raw, block_raw, disp_tz_name, tz_label, rate_file = (sys.argv + [""]*5)[1:6]
+daily_raw, block_raw, disp_tz_name, tz_label, rate_file, bj_tz_name, bj_label = (sys.argv + [""]*7)[1:8]
 
-DISP_TZ = None
-if ZoneInfo and disp_tz_name:
-    try: DISP_TZ = ZoneInfo(disp_tz_name)
-    except Exception: DISP_TZ = None
+def mk_tz(name):
+    if ZoneInfo and name:
+        try: return ZoneInfo(name)
+        except Exception: return None
+    return None
+
+DISP_TZ = mk_tz(disp_tz_name)
+BJ_TZ   = mk_tz(bj_tz_name)
 
 def to_disp(dt):
     return dt.astimezone(DISP_TZ) if DISP_TZ else dt.astimezone()
+
+def to_bj(dt):
+    return dt.astimezone(BJ_TZ) if BJ_TZ else dt.astimezone()
 
 def fmt_tokens(n):
     n = int(n or 0)
@@ -61,12 +70,12 @@ except Exception: block_tok = 0
 
 # ---- 官方限额(来自 statusLine 写的文件)----
 def read_window(w):
-    """返回 (pct:int|None, reset_clock:str, remain:str)"""
+    """返回 (pct:int|None, reset_clock:str, reset_clock_bj:str, remain:str)"""
     w = w or {}
     pct = w.get("used_percentage")
     pct = int(pct) if isinstance(pct, (int, float)) else None
     ra = w.get("resets_at")
-    reset_clock, remain = "", ""
+    reset_clock, reset_clock_bj, remain = "", "", ""
     dt = None
     if isinstance(ra, (int, float)) and ra > 0:                 # unix 秒(我们的 wrapper)
         dt = datetime.fromtimestamp(ra, tz=timezone.utc)
@@ -77,16 +86,18 @@ def read_window(w):
         except Exception:
             dt = None
     if dt:
-        reset_clock = to_disp(dt).strftime("%-I:%M%p").lower()
+        reset_clock    = to_disp(dt).strftime("%H:%M")
+        reset_clock_bj = to_bj(dt).strftime("%H:%M")
         remain = fmt_dur((dt - datetime.now(timezone.utc)).total_seconds()/60)
-    return pct, reset_clock, remain
+    return pct, reset_clock, reset_clock_bj, remain
 
-five_pct=seven_pct=None; five_reset=five_remain=seven_reset=seven_remain=""; rate_ok=False
+five_pct=seven_pct=None
+five_reset=five_reset_bj=five_remain=seven_reset=seven_reset_bj=seven_remain=""; rate_ok=False
 try:
     with open(os.path.expanduser(rate_file)) as f:
         rl = json.load(f)
-    five_pct,  five_reset,  five_remain  = read_window(rl.get("five_hour"))
-    seven_pct, seven_reset, seven_remain = read_window(rl.get("seven_day"))
+    five_pct,  five_reset,  five_reset_bj,  five_remain  = read_window(rl.get("five_hour"))
+    seven_pct, seven_reset, seven_reset_bj, seven_remain = read_window(rl.get("seven_day"))
     rate_ok = (five_pct is not None or seven_pct is not None)
 except Exception:
     pass
@@ -99,10 +110,13 @@ print(json.dumps({
     "rate_ok": rate_ok,
     "five_pct": five_pct,
     "five_reset": five_reset,
+    "five_reset_bj": five_reset_bj,
     "five_remain": five_remain,
     "seven_pct": seven_pct,
     "seven_reset": seven_reset,
+    "seven_reset_bj": seven_reset_bj,
     "seven_remain": seven_remain,
     "tz_label": tz_label,
+    "bj_label": bj_label,
 }, ensure_ascii=False))
 PY

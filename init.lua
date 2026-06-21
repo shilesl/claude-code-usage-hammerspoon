@@ -147,8 +147,8 @@ local function refresh()
     setText("wktxt", "📅 周限额  " .. sp .. "%   剩 " .. (d.seven_remain or "-")); setBar("wkbar", sp)
   else setText("wktxt", "📅 周限额  (无官方数据)") end
   setText("tok", "今日 token " .. (d.today_tokens_h or "-"))
-  setText("rst", "重置时间(" .. (d.tz_label or "") .. ")")
-  setText("rst2", "5h:" .. (d.five_reset or "-") .. "   周:" .. (d.seven_reset or "-"))
+  setText("rst",  "重置·" .. (d.tz_label or "LA") .. "   5h:" .. (d.five_reset or "-") .. "  周:" .. (d.seven_reset or "-"))
+  setText("rst2", "重置·" .. (d.bj_label or "北京") .. "  5h:" .. (d.five_reset_bj or "-") .. "  周:" .. (d.seven_reset_bj or "-"))
 end
 
 canvas = buildCanvas(); canvas:show(); refresh()

@@ -5,7 +5,7 @@
 - ⏳ **5 小时限额**：已用百分比 + 剩余时间 + 进度条
 - 📅 **周限额**：已用百分比 + 剩余时间 + 进度条
 - 今日 token 用量
-- 两个窗口的重置时间（可配置时区）
+- 两个窗口的重置时间，**同时显示两个时区**（默认 LA + 北京，24 小时制）
 
 卡片始终置顶、跨所有桌面（Space）可见，可拖动，位置会被记住。进度条颜色随用量变化：绿 → 黄（≥50%）→ 红（≥80%）。
 
@@ -58,9 +58,15 @@ ccusage ─┐
 
 ## 配置
 
-- **时区**：编辑 `claude-usage-data.sh` 顶部的 `DISPLAY_TZ` / `TZ_LABEL`（默认 `America/Los_Angeles`）。
+- **时区**：编辑 `claude-usage-data.sh` 顶部的：
+  - `DISPLAY_TZ` / `TZ_LABEL`：第一个时区（默认 `America/Los_Angeles` / `LA`）。
+  - `BJ_TZ` / `BJ_LABEL`：第二个时区（默认 `Asia/Shanghai` / `北京`）。
+
+  重置时间使用 24 小时制（`%H:%M`）显示，两个时区各占一行。
 - **卡片尺寸 / 边距 / 刷新频率**：编辑 `init.lua` 顶部的 `W, H`、`MARGIN`、以及 `hs.timer.doEvery(30, ...)`（默认 30 秒刷新一次）。
 - **位置**：直接拖动卡片即可，坐标自动存到 `~/.hammerspoon/claude-hud-pos.json`。
+
+> ⚠️ 本仓库里的文件只是源码，实际运行的是 `~/.claude-usage-data.sh` 和 `~/.hammerspoon/init.lua` 两个独立副本。改完仓库后记得重新 `cp` 到上述位置，再 Reload Config 才会生效。
 
 ## 调试
 
