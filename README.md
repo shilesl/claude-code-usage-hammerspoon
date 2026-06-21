@@ -9,6 +9,8 @@
 
 卡片始终置顶、跨所有桌面（Space）可见，可拖动，位置会被记住。进度条颜色随用量变化：绿 → 黄（≥50%）→ 红（≥80%）。
 
+点右上角的 **－/＋** 可把卡片**收起 / 展开**：收起后只剩一行摘要（`🤖 5h xx%  周 xx%`），不占地方；展开恢复完整卡片。收起状态会被记住，重启后保持。
+
 > 截图：把效果图放到这里 `docs/screenshot.png` 后取消下一行注释
 > <!-- ![screenshot](docs/screenshot.png) -->
 
@@ -54,7 +56,7 @@ ccusage ─┐
 
 3. 在 Hammerspoon 菜单里点 **Reload Config**（或首次启动 Hammerspoon 并授予辅助功能权限）。
 
-   加载成功会弹出「Claude 用量组件已加载(可拖动)」。
+   加载成功会弹出「Claude 用量组件已加载(右上角 －/＋ 可收起)」。
 
 ## 配置
 
@@ -63,8 +65,8 @@ ccusage ─┐
   - `BJ_TZ` / `BJ_LABEL`：第二个时区（默认 `Asia/Shanghai` / `北京`）。
 
   重置时间使用 24 小时制（`%H:%M`）显示，两个时区各占一行。
-- **卡片尺寸 / 边距 / 刷新频率**：编辑 `init.lua` 顶部的 `W, H`、`MARGIN`、以及 `hs.timer.doEvery(30, ...)`（默认 30 秒刷新一次）。
-- **位置**：直接拖动卡片即可，坐标自动存到 `~/.hammerspoon/claude-hud-pos.json`。
+- **卡片尺寸 / 边距 / 刷新频率**：编辑 `init.lua` 顶部的 `W, H`（展开尺寸）、`CW, CH`（收起尺寸）、`MARGIN`、以及 `hs.timer.doEvery(30, ...)`（默认 30 秒刷新一次）。
+- **位置 / 收起状态**：直接拖动卡片即可，坐标与收起状态（`collapsed`）自动存到 `~/.hammerspoon/claude-hud-pos.json`。点右上角 `－/＋` 收起或展开。
 
 > ⚠️ 本仓库里的文件只是源码，实际运行的是 `~/.claude-usage-data.sh` 和 `~/.hammerspoon/init.lua` 两个独立副本。改完仓库后记得重新 `cp` 到上述位置，再 Reload Config 才会生效。
 
