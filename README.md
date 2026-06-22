@@ -44,13 +44,13 @@ ccusage ─┐
 不用先 clone，一行搞定：
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Chenhantognxue/claude-code-usage-hammerspoon/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/shilesl/claude-code-usage-hammerspoon/main/install.sh | bash
 ```
 
 或者 clone 之后在仓库目录里跑：
 
 ```bash
-git clone https://github.com/Chenhantognxue/claude-code-usage-hammerspoon.git
+git clone https://github.com/shilesl/claude-code-usage-hammerspoon.git
 cd claude-code-usage-hammerspoon
 ./install.sh
 ```

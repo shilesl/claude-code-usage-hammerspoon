@@ -7,7 +7,7 @@
 #   ./install.sh
 #
 #   # 或者一行远程安装(不需先 clone):
-#   curl -fsSL https://raw.githubusercontent.com/Chenhantognxue/claude-code-usage-hammerspoon/main/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/shilesl/claude-code-usage-hammerspoon/main/install.sh | bash
 #
 #   ./install.sh --uninstall   # 卸载
 #
@@ -20,7 +20,7 @@
 # ----------------------------------------------------------------------------
 set -uo pipefail
 
-REPO_RAW="https://raw.githubusercontent.com/Chenhantognxue/claude-code-usage-hammerspoon/main"
+REPO_RAW="https://raw.githubusercontent.com/shilesl/claude-code-usage-hammerspoon/main"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" 2>/dev/null && pwd || echo "")"
 
 HS_DIR="$HOME/.hammerspoon"
