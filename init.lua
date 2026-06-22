@@ -4,6 +4,14 @@
 
 require("hs.ipc")   -- 允许命令行 hs -c 调试
 
+-- 重复加载时清理上一份实例(防止画布/定时器残留;作为独立 init.lua 加载时无副作用)
+if _G.__claudeHud then
+  pcall(function() if _G.__claudeHud.canvas then _G.__claudeHud.canvas:delete() end end)
+  pcall(function() if _G.__claudeHud.refreshTimer then _G.__claudeHud.refreshTimer:stop() end end)
+  pcall(function() if _G.__claudeHud.screenWatcher then _G.__claudeHud.screenWatcher:stop() end end)
+  pcall(function() if _G.__claudeHud.caffeineWatcher then _G.__claudeHud.caffeineWatcher:stop() end end)
+end
+
 local DATA_SCRIPT = os.getenv("HOME") .. "/.claude-usage-data.sh"
 local POS_FILE    = os.getenv("HOME") .. "/.hammerspoon/claude-hud-pos.json"
 local W, H   = 250, 158   -- 展开尺寸

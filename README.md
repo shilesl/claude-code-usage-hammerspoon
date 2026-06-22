@@ -39,6 +39,32 @@ ccusage ─┐
 
 ## 安装
 
+### 一键安装（推荐）
+
+不用先 clone，一行搞定：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Chenhantognxue/claude-code-usage-hammerspoon/main/install.sh | bash
+```
+
+或者 clone 之后在仓库目录里跑：
+
+```bash
+git clone https://github.com/Chenhantognxue/claude-code-usage-hammerspoon.git
+cd claude-code-usage-hammerspoon
+./install.sh
+```
+
+`install.sh` 会：检查并尝试装依赖 → 把数据脚本放到 `~/.claude-usage-data.sh` → 把组件作为模块放到
+`~/.hammerspoon/claude_usage_hud.lua` → 在你的 `~/.hammerspoon/init.lua` **幂等地**注入一行
+`require("claude_usage_hud")`（带标记，不动你原有配置，可反复运行）→ 自动 Reload Hammerspoon。
+
+卸载：`./install.sh --uninstall`。
+
+> 首次拖不动卡片，是因为缺辅助功能权限：**系统设置 → 隐私与安全性 → 辅助功能 → 勾选 Hammerspoon**。
+
+### 手动安装
+
 1. 装好上面的依赖。
 
 2. 复制两个文件到对应位置：
@@ -52,7 +78,8 @@ ccusage ─┐
    cp init.lua ~/.hammerspoon/init.lua
    ```
 
-   > 已经有自己的 `~/.hammerspoon/init.lua`？把本仓库 `init.lua` 的内容粘到你现有配置里即可，它是自包含的。
+   > 已经有自己的 `~/.hammerspoon/init.lua`？把本仓库 `init.lua` 内容粘进去即可，它是自包含的；
+   > 或把它存成 `~/.hammerspoon/claude_usage_hud.lua`，在自己的 init.lua 里加 `require("claude_usage_hud")`。
 
 3. 在 Hammerspoon 菜单里点 **Reload Config**（或首次启动 Hammerspoon 并授予辅助功能权限）。
 
@@ -68,7 +95,9 @@ ccusage ─┐
 - **卡片尺寸 / 边距 / 刷新频率**：编辑 `init.lua` 顶部的 `W, H`（展开尺寸）、`CW, CH`（收起尺寸）、`MARGIN`、以及 `hs.timer.doEvery(30, ...)`（默认 30 秒刷新一次）。
 - **位置 / 收起状态**：直接拖动卡片即可，坐标与收起状态（`collapsed`）自动存到 `~/.hammerspoon/claude-hud-pos.json`。点右上角 `－/＋` 收起或展开。
 
-> ⚠️ 本仓库里的文件只是源码，实际运行的是 `~/.claude-usage-data.sh` 和 `~/.hammerspoon/init.lua` 两个独立副本。改完仓库后记得重新 `cp` 到上述位置，再 Reload Config 才会生效。
+> ⚠️ 本仓库里的文件只是源码，实际运行的是 `~/.claude-usage-data.sh` 和 Hammerspoon 里的副本
+> （一键安装为 `~/.hammerspoon/claude_usage_hud.lua`，手动安装可能是 `~/.hammerspoon/init.lua`）。
+> 改完仓库后重新跑 `./install.sh`（或重新 `cp`），再 Reload Config 才会生效。
 
 ## 调试
 
