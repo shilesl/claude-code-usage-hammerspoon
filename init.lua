@@ -4,17 +4,9 @@
 
 require("hs.ipc")   -- 允许命令行 hs -c 调试
 
--- 重复加载时清理上一份实例(防止画布/定时器残留;作为独立 init.lua 加载时无副作用)
-if _G.__claudeHud then
-  pcall(function() if _G.__claudeHud.canvas then _G.__claudeHud.canvas:delete() end end)
-  pcall(function() if _G.__claudeHud.refreshTimer then _G.__claudeHud.refreshTimer:stop() end end)
-  pcall(function() if _G.__claudeHud.screenWatcher then _G.__claudeHud.screenWatcher:stop() end end)
-  pcall(function() if _G.__claudeHud.caffeineWatcher then _G.__claudeHud.caffeineWatcher:stop() end end)
-end
-
 local DATA_SCRIPT = os.getenv("HOME") .. "/.claude-usage-data.sh"
 local POS_FILE    = os.getenv("HOME") .. "/.hammerspoon/claude-hud-pos.json"
-local W, H   = 250, 158   -- 展开尺寸
+local W, H   = 250, 222   -- 展开尺寸
 local CW, CH = 178, 34    -- 收起尺寸
 local MARGIN = 24
 local PAD = 16
@@ -41,6 +33,11 @@ local function barColor(pct)
   if pct >= 80 then return { red = 0.95, green = 0.35, blue = 0.35, alpha = 0.95 } end
   if pct >= 50 then return { red = 0.96, green = 0.75, blue = 0.30, alpha = 0.95 } end
   return { red = 0.40, green = 0.80, blue = 0.55, alpha = 0.95 }
+end
+
+-- 周期进度条用中性蓝(它表示「时间走了多远」,高了不是坏事,不该变红报警)
+local function cycColor(_)
+  return { red = 0.45, green = 0.62, blue = 0.95, alpha = 0.95 }
 end
 
 -- 把坐标限制在屏幕内(防止拖出界或换分辨率后看不到)
@@ -115,15 +112,33 @@ local function buildCanvas(collapsed)
       roundedRectRadii = { xRadius = 3, yRadius = 3 },
       fillColor = barColor(0), frame = { x = PAD, y = 78, w = 0, h = 6 } })
 
+    -- 周期 行(本周 7 天窗口已过去多久)
+    c:appendElements({ type = "text", text = "", id = "cyctxt",
+      textColor = { white = 1, alpha = 0.9 }, textSize = 12,
+      frame = { x = PAD, y = 92, w = BAR_W, h = 16 } })
+    c:appendElements({ type = "rectangle", action = "fill",
+      roundedRectRadii = { xRadius = 3, yRadius = 3 },
+      fillColor = { white = 1, alpha = 0.12 },
+      frame = { x = PAD, y = 110, w = BAR_W, h = 6 } })
+    c:appendElements({ type = "rectangle", action = "fill", id = "cycbar",
+      roundedRectRadii = { xRadius = 3, yRadius = 3 },
+      fillColor = cycColor(0), frame = { x = PAD, y = 110, w = 0, h = 6 } })
+
     c:appendElements({ type = "text", text = "", id = "tok",
       textColor = { white = 1, alpha = 0.55 }, textSize = 11,
-      frame = { x = PAD, y = 92, w = BAR_W, h = 16 } })
+      frame = { x = PAD, y = 124, w = BAR_W, h = 16 } })
+    c:appendElements({ type = "text", text = "", id = "tokw",
+      textColor = { white = 1, alpha = 0.55 }, textSize = 11,
+      frame = { x = PAD, y = 140, w = BAR_W, h = 16 } })
+    c:appendElements({ type = "text", text = "", id = "tokm",
+      textColor = { white = 1, alpha = 0.55 }, textSize = 11,
+      frame = { x = PAD, y = 156, w = BAR_W, h = 16 } })
     c:appendElements({ type = "text", text = "", id = "rst",
       textColor = { white = 1, alpha = 0.4 }, textSize = 10,
-      frame = { x = PAD, y = 110, w = BAR_W, h = 14 } })
+      frame = { x = PAD, y = 174, w = BAR_W, h = 14 } })
     c:appendElements({ type = "text", text = "", id = "rst2",
       textColor = { white = 1, alpha = 0.4 }, textSize = 10,
-      frame = { x = PAD, y = 124, w = BAR_W, h = 14 } })
+      frame = { x = PAD, y = 188, w = BAR_W, h = 14 } })
   end
 
   -- 鼠标:点 toggle 收起/展开;点背景拖动整张卡片
@@ -161,11 +176,11 @@ local function el(id)
   for i = 1, #canvas do if canvas[i].id == id then return i end end
 end
 local function setText(id, txt) local i = el(id); if i then canvas[i].text = txt end end
-local function setBar(id, pct)
+local function setBar(id, pct, colorFn)
   local i = el(id); if not i then return end
   pct = math.max(0, math.min(100, pct or 0))
   canvas[i].frame = { x = PAD, y = canvas[i].frame.y, w = BAR_W * pct / 100, h = 6 }
-  canvas[i].fillColor = barColor(pct)
+  canvas[i].fillColor = (colorFn or barColor)(pct)
 end
 
 local function refresh()
@@ -185,7 +200,13 @@ local function refresh()
   if sp ~= nil then
     setText("wktxt", "📅 周限额  " .. sp .. "%   剩 " .. (d.seven_remain or "-")); setBar("wkbar", sp)
   else setText("wktxt", "📅 周限额  (无官方数据)") end
-  setText("tok", "今日 token " .. (d.today_tokens_h or "-"))
+  local cp = d.seven_cycle_pct
+  if cp ~= nil then
+    setText("cyctxt", "🔄 周期    " .. cp .. "%   已过 " .. (d.seven_elapsed or "-")); setBar("cycbar", cp, cycColor)
+  else setText("cyctxt", "🔄 周期    (无官方数据)") end
+  setText("tok",  "今日 token  " .. (d.today_tokens_h or "-"))
+  setText("tokw", "本周 token  " .. (d.week_tokens_h or "-"))
+  setText("tokm", "本月 token  " .. (d.month_tokens_h or "-"))
   setText("rst",  "重置·" .. (d.tz_label or "LA") .. "   5h:" .. (d.five_reset or "-") .. "  周:" .. (d.seven_reset or "-"))
   setText("rst2", "重置·" .. (d.bj_label or "北京") .. "  5h:" .. (d.five_reset_bj or "-") .. "  周:" .. (d.seven_reset_bj or "-"))
 end
